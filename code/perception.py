@@ -14,14 +14,14 @@ def color_thresh(img, rgb_thresh=(160, 160, 160)):
     above_thresh = (img[:,:,0] > rgb_thresh[0]) \
                 & (img[:,:,1] > rgb_thresh[1]) \
                 & (img[:,:,2] > rgb_thresh[2])
-    
+    # That which isn't a path, must be an obstacle
     below_thresh = (img[:,:,0] < rgb_thresh[0]) \
                 & (img[:,:,1] < rgb_thresh[1]) \
                 & (img[:,:,2] < rgb_thresh[2])
 
-    ## (gold is 255, 215, 0), cv2 works in BGR
-    rock_thresh = (img[:,:,0] > 0) \
-                & (img[:,:,1] > 215) \
+    ## (good yellow is 255, 221, 35) but in cv2 bgr, so
+    rock_thresh = (img[:,:,0] > 35) \
+                & (img[:,:,1] > 221) \
                 & (img[:,:,2] < 255)
 
     # Index the array of zeros with the boolean array and set to 1
@@ -126,7 +126,7 @@ def perception_step(Rover):
     Rover.vision_image[:,:,1] = rocks
     Rover.vision_image[:,:,2] = nav
 
-    # 5) Convert map image pixel values to rover-centric coords
+    # Convert map image pixel values to rover-centric coords
     xnav_pix, ynav_pix = rover_coords(nav)
     xobs_pix, yobs_pix = rover_coords(obs)
     xrock_pix, yrock_pix = rover_coords(rocks)
