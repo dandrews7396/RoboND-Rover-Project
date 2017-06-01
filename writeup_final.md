@@ -133,6 +133,26 @@ This is something that I have also witnessed in aviation, when the Lynx helicopt
 
 #### 2. Launching in autonomous mode your rover can navigate and map autonomously.  Explain your results and how you might improve them in your writeup.
 
+On initially trying to run the rover autonomously, I encountered a massive list of ecxeptions. I traced it to the `update_rover()` function in `supporting_functions.py`. I solved this by changing the `split()` condition when trying to read position data.
+
+From this:
+```
+samples_xpos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_x"].split(';')])
+samples_ypos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_y"].split(';')])
+...
+# The current position of the rover
+Rover.pos = [convert_to_float(pos.strip()) for pos in data["position"].split(';')]
+```
+To this
+```
+samples_xpos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_x"].split(',')])
+samples_ypos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_y"].split(',')])
+...
+# The current position of the rover
+Rover.pos = [convert_to_float(pos.strip()) for pos in data["position"].split(',')]
+```
+
+
 I decided it would be prudent to test my rover over a number of tries. I knew fidelity wouldn't be a problem, so I decided I would run my test until I achieved 40% mapping and at least 1 sample detected. I also chose to run these over different image qualities. The results were as follows:
 
 |Quality  |Time   |Mapped %|Fidelity %|Samples|
