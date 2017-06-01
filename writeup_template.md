@@ -102,18 +102,68 @@ dst = np.float32([[img_size[0]/2 - dst_size, img_size[1] - bottom_offset],
 
 These were then passed, together with the original image, to the `perspect_transform()` function, and stored in the variable `warped`. This warped image was then passed to the, previously described, `color_threshed()` function which, as explained earlier, returns three images; One each for navigable terrain, obstacles and rock samples.
 
-These three images are then run through the `rover_coords()` function. This function initially identifies nonzero pixels within the image, and then tranlates these onto a plot with reference to the position of the rover being at the center of the page, except that that centre is now on the Y-axis. This is made more clear in the next image.
+These three images are then run through the `rover_coords()` function. This function initially identifies nonzero pixels within the image, and then tranlates these onto a plot with reference to the position of the rover being at the center of the page, except that that centre is now on the Y-axis. This process is made more clear in the next image.
 
 ![alt text][image5]
 
+The next step was to process the results of the `rover_coords()` function, and turn them into co-ordinates that I could plot onto the `worldmap`. In order to achieve this, I made use of the `pix_to_world()` function. This made use of to further functions, `rotate_pix()` and `translate_pix()`, together they perform a 2-D rotational transformation, using matrix multiplication, and then a standard transformation.
 
-![alt text][image2]
+The resulting co-ordinates for the navigable path, obstacles and samples are then overlayed onto `worldmap` by incrementing the resulting pionts, on each of the respective layers by one.
+
+Finally, the output images are processed and are returned.
+
+
 ### Autonomous Navigation and Mapping
 
 #### 3. Fill in the `perception_step()` (at the bottom of the `perception.py` script) and `decision_step()` (in `decision.py`) functions in the autonomous mapping scripts and an explanation is provided in the writeup of how and why these functions were modified as they were.
 
+In filling out `perception_step()`, I essentially used the same code as `process_image()`. It seemed to work fairly well in the notebook, so I used this as a basis to build from. I realised that the rover was speeding around quite a lot, and had a tendency to swerve around. Because of this, the rover failed to detect if it was coming to a dead-end. However, the rover was picking up most of the rock samples, so that showed that I had the thresholds right. 
 
-#### 2. Launching in autonomous mode your rover can navigate and map autonomously.  Explain your results and how you might improve them in your writeup.  
+Based on this evidence, I decided to add a condition that stopped the rover adding data to the world map in high pitch and roll conditions. I wasn't sure what values to use at first but with a little trial and error, I settled on this:
+
+```
+if np.abs(Rover.pitch) < 0.4 and np.abs(Rover.roll) < 0.9:
+        Rover.worldmap[yobs_world, xobs_world, 0] += 1
+        Rover.worldmap[yrock_world, xrock_world, 1] += 1
+        Rover.worldmap[ynav_world, xnav_world, 2] += 1
+```
+
+I chose to use absolute absolute values, as this would mean I wouldn't have to write additional logic statements to account for negative numbers. I settled on these figures because I found that if they were any more restrictive, then no data would be recorded unless crawling along.
+
+Despite these imrovements, I still wasn't happy with the fidelity my rover was achieving. For this reason, I decided I would need to reduce the number of occasions that I wasn't adding data to the world map. This meant changing `decision_step`. I hypothesised that if I were to base the acceleration condition on roll, then this would at least stop the rover from swerving so violently and in turn, provide it with more opportunities to accept data to `worldmap`. So I altered the code to read:
+
+```
+if Rover.mode == 'forward': 
+            # Check the extent of navigable terrain
+            if len(Rover.nav_angles) >= Rover.stop_forward:  
+                # If mode is forward, navigable terrain looks good 
+                # and velocity is below max, then throttle if roll is not harsh
+                # This should prevent fishtailing, and improve fidelity
+                if Rover.vel < Rover.max_vel and np.abs(Rover.roll) <0.5:
+                    # Set throttle value to throttle setting
+                    Rover.throttle = Rover.throttle_set
+                else: # Else coast
+                    Rover.throttle = 0
+                Rover.brake = 0
+```
+
+This is something that I have also witnessed in aviation, when the Lynx helicopter flies over a certain airspeed, it starts to experience lateral 'fish-tailing'. My rover appeared to be behaving in a very similar manner. The effect on fidelity and mapping was very positive.
+
+#### 2. Launching in autonomous mode your rover can navigate and map autonomously.  Explain your results and how you might improve them in your writeup.
+
+I decided it would be prudent to test my rover over a number of tries. I knew fidelity wouldn't be a problem, so I decided I would run my test until I achieved 40% mapping and at least 1 sample detected. I also chose to run these over different image qualities. The results were as follows:
+
+|Quality  |Time   |Mapped %|Fidelity %|Samples|
+|:-------:|------:|:------:|:--------:|:-----:|
+|Fastest  |149s   |40      |84        |1      |
+|Good     |153s   |40      |82        |2      |
+|Fantastic|241s   |58      |78        |1      |
+
+As you can see, the fidelity for these results is quite high. I expected that to drop away as the image quality increased, as I thought it may become harder to pick out the samples and distinguish between obstacle and shadow, but was pleased to see it remain near 80%. I believe that the other variables are down to chance in a lot of cases, as they depend a lot on the random placement of the samples and which direction the rover is pointing in at the start point. But I noted that whenever a sample appeared in the main view, it was quickly identified. Given more time, I would like to have been able to test this theory a lot more, perhaps even changing start position and other variables, if possible.
+
+I think, if I had more experience with computer vision I would probably have done better with distinguishing between features. I know there is a better way to evaluate the distance to objects, but I'm not sure how to implement it at this time. Really I think the only things I have really lacked over the course of this project are experience and time. But I see this as a positive because this is my first time on a course like this. I have a good grasp on the basics of coding, and I have already learnt a lot more.
+
+I would like to have been able to implement the sample pick ups in a more effective way, and I think that there is a lot more refinement I could have done on the rovers' decision making. I will look forward to revisiting this project once I have developed my skillset a little more.
 
 **Note: running the simulator with different choices of resolution and graphics quality may produce different results, particularly on different machines!  Make a note of your simulator settings (resolution and graphics quality set on launch) and frames per second (FPS output to terminal by `drive_rover.py`) in your writeup when you submit the project so your reviewer can reproduce your results.**
 

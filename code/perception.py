@@ -140,10 +140,12 @@ def perception_step(Rover):
     xrock_world, yrock_world = pix_to_world(xrock_pix, yrock_pix, Rover.pos[0],
                                           Rover.pos[1], Rover.yaw,
                                           world_size, scale)
-    # Update Rover worldmap (to be displayed on right side of screen)
-    Rover.worldmap[yobs_world, xobs_world, 0] += 1
-    Rover.worldmap[yrock_world, xrock_world, 1] += 1
-    Rover.worldmap[ynav_world, xnav_world, 2] += 1
+    # Update Rover worldmap (to be displayed on right side of screen), only when pitch
+    # and roll are not extreme. This will ensure only quality data is added to worldmap
+    if np.abs(Rover.pitch) < 0.4 and np.abs(Rover.roll) < 0.9:
+        Rover.worldmap[yobs_world, xobs_world, 0] += 1
+        Rover.worldmap[yrock_world, xrock_world, 1] += 1
+        Rover.worldmap[ynav_world, xnav_world, 2] += 1
 
     # Convert rover-centric pixel positions to polar coordinates
     Rover.nav_dists, Rover.nav_angles = to_polar_coords(xnav_pix, ynav_pix)

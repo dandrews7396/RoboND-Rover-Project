@@ -8,7 +8,7 @@ def decision_step(Rover):
     # Implement conditionals to decide what to do given perception data
     # Here you're all set up with some basic functionality but you'll need to
     # improve on this decision tree to do a good job of navigating autonomously!
-
+    
     # Example:
     # Check if we have vision data to make decisions with
     if Rover.nav_angles is not None:
@@ -17,8 +17,9 @@ def decision_step(Rover):
             # Check the extent of navigable terrain
             if len(Rover.nav_angles) >= Rover.stop_forward:  
                 # If mode is forward, navigable terrain looks good 
-                # and velocity is below max, then throttle 
-                if Rover.vel < Rover.max_vel:
+                # and velocity is below max, then throttle if roll is not harsh
+                # This should prevent fishtailing, and improve fidelity
+                if Rover.vel < Rover.max_vel and np.abs(Rover.roll) <0.5:
                     # Set throttle value to throttle setting
                     Rover.throttle = Rover.throttle_set
                 else: # Else coast
@@ -42,6 +43,8 @@ def decision_step(Rover):
                 Rover.throttle = 0
                 Rover.brake = Rover.brake_set
                 Rover.steer = 0
+                if Rover.near_sample and not Rover.vel:
+                    Rover.send_pickup = True
             # If we're not moving (vel < 0.2) then do something else
             elif Rover.vel <= 0.2:
                 # Now we're stopped and we have vision data to see if there's a path forward
