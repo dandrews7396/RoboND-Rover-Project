@@ -3,34 +3,23 @@ import cv2
 
 # Identify pixels above the threshold
 # Threshold of RGB > 160 does a nice job of identifying ground pixels only
-def color_thresh(img, rgb_thresh=(160, 160, 160)):
+def color_thresh(img, lwr_thresh=(113, 155, 155), upr_thresh = (255, 255, 255)):
     # Create an array of zeros same xy size as img, but single channel
-    nav_select = np.zeros_like(img[:,:,0])
-    obs_select = np.zeros_like(img[:,:,0])
-    rock_select = np.zeros_like(img[:,:,0])
+    select = np.zeros_like(img[:,:,0])
     # Require that each pixel be above all three threshold values in RGB
-    # above_thresh will now contain a boolean array with "True"
+    # thresh will now contain a boolean array with "True"
     # where threshold was met
-    above_thresh = (img[:,:,0] > rgb_thresh[0]) \
-                & (img[:,:,1] > rgb_thresh[1]) \
-                & (img[:,:,2] > rgb_thresh[2])
-    # That which isn't a path, must be an obstacle
-    below_thresh = (img[:,:,0] < rgb_thresh[0]) \
-                & (img[:,:,1] < rgb_thresh[1]) \
-                & (img[:,:,2] < rgb_thresh[2])
-
-    ## (good yellow is 255, 221, 35) but in cv2 bgr, so
-    rock_thresh = (img[:,:,0] > 35) \
-                & (img[:,:,1] > 221) \
-                & (img[:,:,2] < 255)
+    thresh = (img[:,:,0] > lwr_thresh[0]) \
+                & (img[:,:,1] > lwr_thresh[1]) \
+                & (img[:,:,2] > lwr_thresh[2]) \
+                & (img[:,:,0] < upr_thresh[0]) \
+                & (img[:,:,1] < upr_thresh[1]) \
+                & (img[:,:,2] < upr_thresh[2])
 
     # Index the array of zeros with the boolean array and set to 1
-    nav_select[above_thresh] = 1
-    obs_select[below_thresh] = 1
-    rock_select[rock_thresh] = 1
-
-    # Return the binary images
-    return nav_select, obs_select, rock_select
+    select[thresh] = 1
+    # Return the binary image
+    return select
 
 # Define a function to convert to rover-centric coordinates
 def rover_coords(binary_img):
@@ -120,11 +109,17 @@ def perception_step(Rover):
     # Apply perspective transform
     warped = perspect_transform(img, src, dst)
     # Apply color threshold to identify navigable terrain/obstacles/rock samples
-    nav, obs, rocks = color_thresh(warped)
+    nav = color_thresh(warped)
+    obs = color_thresh(warped, (10,10,10), (155, 155, 155))
+    ## Apply majorly open threshold for yellow, because old 'good' values just don't seem to work.
+    rocks = color_thresh(warped, (128, 110, 0), (190, 160, 40))
     # Update Rover.vision_image (this will be displayed on left side of screen)
-    Rover.vision_image[:,:,0] = obs
-    Rover.vision_image[:,:,1] = rocks
-    Rover.vision_image[:,:,2] = nav
+    rover_obs = color_thresh(img, (128, 110, 0), (190, 160, 40))
+    rover_rocks = color_thresh(img, (10,10,10), (155, 155, 155))
+    rover_nav = color_thresh(img)
+    Rover.vision_image[:,:,0] = rover_obs
+    Rover.vision_image[:,:,1] = rover_rocks
+    Rover.vision_image[:,:,2] = rover_nav
 
     # Convert map image pixel values to rover-centric coords
     xnav_pix, ynav_pix = rover_coords(nav)
