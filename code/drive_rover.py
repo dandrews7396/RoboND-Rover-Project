@@ -47,6 +47,7 @@ class RoverState():
         self.roll = None # Current roll angle
         self.vel = None # Current velocity
         self.steer = 0 # Current steering angle
+        self.front_space = None
         self.throttle = 0 # Current throttle value
         self.brake = 0 # Current brake value
         self.nav_angles = None # Angles of navigable terrain pixels
@@ -63,8 +64,8 @@ class RoverState():
         # of navigable terrain pixels.  This is a very crude form of knowing
         # when you can keep going and when you should stop.  Feel free to
         # get creative in adding new fields or modifying these!
-        self.stop_forward = 50 # Threshold to initiate stopping
-        self.go_forward = 500 # Threshold to go forward again
+        self.stop_forward = 20 # Threshold to initiate stopping
+        self.go_forward = 50 # Threshold to go forward again
         self.max_vel = 2 # Maximum velocity (meters/second)
         # Image output from perception step
         # Update this image to display your intermediate analysis steps

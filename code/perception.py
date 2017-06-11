@@ -117,9 +117,9 @@ def perception_step(Rover):
     rover_obs = color_thresh(img, (128, 110, 0), (190, 160, 40))
     rover_rocks = color_thresh(img, (10,10,10), (155, 155, 155))
     rover_nav = color_thresh(img)
-    Rover.vision_image[:,:,0] = rover_obs
-    Rover.vision_image[:,:,1] = rover_rocks
-    Rover.vision_image[:,:,2] = rover_nav
+    Rover.vision_image[:,:,1] = rover_obs * 255
+    Rover.vision_image[:,:,0] = rover_rocks * 255
+    Rover.vision_image[:,:,2] = rover_nav * 255
 
     # Convert map image pixel values to rover-centric coords
     xnav_pix, ynav_pix = rover_coords(nav)
@@ -137,7 +137,7 @@ def perception_step(Rover):
                                           world_size, scale)
     # Update Rover worldmap (to be displayed on right side of screen), only when pitch
     # and roll are not extreme. This will ensure only quality data is added to worldmap
-    if np.abs(Rover.pitch) < 0.4 and np.abs(Rover.roll) < 0.9:
+    if np.abs(Rover.pitch) > 1 or np.abs(Rover.roll) > 1:
         Rover.worldmap[yobs_world, xobs_world, 0] += 1
         Rover.worldmap[yrock_world, xrock_world, 1] += 1
         Rover.worldmap[ynav_world, xnav_world, 2] += 1
@@ -146,6 +146,8 @@ def perception_step(Rover):
     Rover.nav_dists, Rover.nav_angles = to_polar_coords(xnav_pix, ynav_pix)
     Rover.obs_dists, Rover.obs_angles = to_polar_coords(xobs_pix, yobs_pix)
     Rover.rock_dists, Rover.rock_angles = to_polar_coords(xrock_pix, yrock_pix)
+    Rover.front_space = [Rover.nav_dists[i] for i in range(Rover.nav_angles.shape[0]) if
+                                     (Rover.steer-0.5) <= (Rover.nav_angles[i] * 180/np.pi) <= (Rover.steer+0.5)]
     
     # Update Rover pixel distances and angles
     #Rover.nav_dists = rover_centric_pixel_distances

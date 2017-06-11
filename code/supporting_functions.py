@@ -18,8 +18,8 @@ def update_rover(Rover, data):
       if Rover.start_time == None:
             Rover.start_time = time.time()
             Rover.total_time = 0
-            samples_xpos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_x"].split(',')])
-            samples_ypos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_y"].split(',')])
+            samples_xpos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_x"].split(';')])
+            samples_ypos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_y"].split(';')])
             Rover.samples_pos = (samples_xpos, samples_ypos)
             Rover.samples_found = np.zeros((len(Rover.samples_pos[0]))).astype(np.int)
       # Or just update elapsed time
@@ -32,7 +32,7 @@ def update_rover(Rover, data):
       # The current speed of the rover in m/s
       Rover.vel = convert_to_float(data["speed"])
       # The current position of the rover
-      Rover.pos = [convert_to_float(pos.strip()) for pos in data["position"].split(',')]
+      Rover.pos = [convert_to_float(pos.strip()) for pos in data["position"].split(';')]
       # The current yaw angle of the rover
       Rover.yaw = convert_to_float(data["yaw"])
       # The current yaw angle of the rover
@@ -50,7 +50,9 @@ def update_rover(Rover, data):
       
       print('speed =',Rover.vel, 'position =', Rover.pos, 'throttle =', 
       Rover.throttle, 'steer_angle =', Rover.steer, 'near_sample', Rover.near_sample, 'pitch=',
-      Rover.pitch, 'roll=', Rover.roll, 'picking_up', data["picking_up"])
+      Rover.pitch, 'roll=', Rover.roll, 'picking_up: ', data["picking_up"], 'mode: ', Rover.mode)
+##      if Rover.nav_angles:
+##            print('nav_angles: ', Rover.nav_angles)
       # Get the current image from the center camera of the rover
       imgString = data["image"]
       image = Image.open(BytesIO(base64.b64decode(imgString)))
